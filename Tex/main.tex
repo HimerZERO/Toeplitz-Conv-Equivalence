@@ -1,0 +1,64 @@
+%% ============================================
+%% ================ Preambule =================
+%% ============================================
+\documentclass[]{scrartcl}
+\usepackage[margin = 0.5in]{geometry}
+
+\usepackage[pdftex,unicode,
+colorlinks=true,
+linkcolor = blue]{hyperref}	% нумерование страниц, ссылки!!!!ИМЕННО В ТАКОМ ПОРЯДКЕ СО СЛЕДУЮЩИМ ПАКЕТОМ
+%\usepackage[warn]{mathtext}				% Поддержка русского текста в формулах
+\usepackage[T1, T2A]{fontenc}			% Пакет выбора кодировки и шрифтов
+\usepackage[utf8]{inputenc} 			% любая желаемая кодировка
+\usepackage[english]{babel}		% поддержка русского языка
+\usepackage{wrapfig}					% Плавающие картинки
+\usepackage{amssymb, amsmath}			% стилевой пакет для формул
+\usepackage{algorithm}
+\usepackage{algorithmic}
+
+
+\ifpdf
+\usepackage{cmap} 				% чтобы работал поиск по PDF
+\usepackage[pdftex]{graphicx}
+%\usepackage{pgfplotstable}		% Для вставки таблиц.
+\pdfcompresslevel=9 			% сжимать PDF
+\else
+\usepackage{graphicx}
+\fi
+
+\usepackage{subcaption}
+%% ============================================
+%% ================ Info =================
+%% ============================================
+\title{Свёрточные операции и Тёплицевы матрицы: анализ эквивалентности в нейронных сетях}
+\author{\begin{tabular}{c}
+	  	 Чернышов Игнат \\
+		 \texttt{chernyshov.im@phystech.edu}
+		\end{tabular}}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+
+Данный проект исследует связь между операциями свёртки в нейронных сетях и умножением на Тёплицевы матрицы. Основная часть проекта заключается в исследовании уже имеющихся результатов статьи <<LU decomposition and Toeplitz decomposition of a neural network>> и их локальной проверке. 
+
+\end{abstract}
+
+\section{Идея}
+
+Ключевая идея заключается в том, что свёрточные слои нейронных сетей можно представить как умножение на специальные Тёплицевы матрицы. Это представление позволяет:
+
+\begin{itemize}
+\item Упростить теоретический анализ свёрточных операций
+\item Применить методы линейной алгебры для оптимизации вычислений
+\item По-новому взглянуть на свойства нейронных сетей
+\end{itemize}
+
+
+\bibliographystyle{unsrt}
+\bibliography{biblio}
+
+\end{document}
