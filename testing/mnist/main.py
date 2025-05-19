@@ -1,30 +1,37 @@
+import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.nn import init
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 
 class ToeplitzLinear(nn.Module):
     def __init__(self, in_features, out_features):
         super().__init__()
-        self.diagonals = nn.Parameter(torch.randn(in_features + out_features - 1))
+        self.diagonals = nn.Parameter(torch.empty(in_features + out_features - 1))
         self.in_features = in_features
         self.out_features = out_features
+        idx_matrix = torch.LongTensor(
+            [[i+j for j in range(in_features)] for i in range(out_features)]
+        )
+        self.reset_parameters()
+        self.register_buffer("idx_matrix", idx_matrix)
+
+    def reset_parameters(self):
+        init.uniform_(self.diagonals, a=-1/len(self.diagonals), b=1/len(self.diagonals))
 
     def forward(self, x):
-        W = torch.zeros(self.out_features, self.in_features)
-        for i in range(self.out_features):
-            for j in range(self.in_features):
-                W[i, j] = self.diagonals[i + j]
+        W = self.diagonals[self.idx_matrix.to(x.device)]
         return x @ W.T
 
 class ToeplitzNet(nn.Module):
     def __init__(self):
         super().__init__()
         self.flatten = nn.Flatten()
-        self.fc1 = ToeplitzLinear(28*28, 512)
-        self.fc2 = ToeplitzLinear(512, 128)
-        self.fc3 = ToeplitzLinear(128, 10)
+        self.fc1 = ToeplitzLinear(28*28, 256)
+        self.fc2 = ToeplitzLinear(256, 32)
+        self.fc3 = ToeplitzLinear(32, 10)
 
     def forward(self, x):
         x = self.flatten(x)
@@ -36,17 +43,54 @@ class ToeplitzNet(nn.Module):
 
 transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5,), (0.5,))])
 train_dataset = datasets.MNIST(root='./data', train=True, download=True, transform=transform)
-train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
+train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True, num_workers=2)
 
-model = ToeplitzNet()
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model = ToeplitzNet().to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 criterion = nn.CrossEntropyLoss()
 
-for epoch in range(5):
+import matplotlib.pyplot as plt
+
+train_losses = []
+train_accuracies = []
+
+
+for epoch in range(25):
+    running_loss = 0.0
+    correct = 0
+    total = 0
+
     for batch, (X, y) in enumerate(train_loader):
+        X, y = X.to(device), y.to(device)
         optimizer.zero_grad()
         pred = model(X)
         loss = criterion(pred, y)
         loss.backward()
         optimizer.step()
-    print(f"Epoch {epoch+1}, Loss: {loss.item():.4f}")
+
+        _, predicted = torch.max(pred.data, 1)
+        total += y.size(0)
+        correct += (predicted == y).sum().item()
+
+        running_loss += loss.item()
+
+
+    epoch_loss = running_loss / len(train_loader)
+    epoch_acc = 100 * correct / total
+
+    train_losses.append(epoch_loss)
+    train_accuracies.append(epoch_acc)
+
+    print(f"Epoch {epoch+1}, Loss: {epoch_loss:.4f}, Accuracy: {epoch_acc:.2f}%")
+
+
+plt.plot(train_losses)
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.show()
+
+plt.plot(train_accuracies)
+plt.xlabel('Epoch')
+plt.ylabel('Accuracy')
+plt.show()
